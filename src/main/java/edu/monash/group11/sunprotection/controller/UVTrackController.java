@@ -7,15 +7,16 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 @RestController
-@RequestMapping("/uv")
+@RequestMapping("/UVI")
 @Slf4j
 public class UVTrackController {
 
     @Resource
     private UVLevelService uvLevelService;
 
-    @GetMapping("/UVLevelByCity/{city}")
-    public ResponseDO getUVLevel(@PathVariable("city")String cityName){
+
+    @GetMapping("/UVIByCity/{city}")
+    public ResponseDO getUVLevels(@PathVariable("city")String cityName){
         String[] location = uvLevelService.getLocation(cityName); //lat lon
 
         if(location == null || location.length == 0)
@@ -25,7 +26,7 @@ public class UVTrackController {
         return ResponseDO.success(uvLevelService.getUVLevel(location[0], location[1]));
     }
 
-    @GetMapping("/UVLevel/{lat}&{lon}")
+    @GetMapping("/UVIByGeo/{lat}&{lon}")
     public ResponseDO getUVLevelByLatAndLon(@PathVariable("lat")String lat, @PathVariable("lon") String lon){
         String uvLevel = uvLevelService.getUVLevel(lat, lon);
         if(uvLevel == null)

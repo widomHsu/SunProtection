@@ -8,11 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +25,8 @@ public class UVLevelServiceImpl implements UVLevelService {
     private OkHttpClient client;
     @Resource
     private Gson gson;
+    @Value("${API.key}")
+    private String API_KEY;
     @Override
     public String getUVLevel(String lat, String lon) {
         // https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=minutely,daily&appid=b3c322f72dca971cf25f9a3af1502e75
@@ -32,27 +34,46 @@ public class UVLevelServiceImpl implements UVLevelService {
                 "?lat=" + lat +
                 "&lon=" + lon +
                 "&exclude=minutely,daily" +
-                "&appid=" + Constant.API_KEY;
+                "&appid=" + API_KEY;
         Request request = new Request.Builder()
                 .url(url)
                 .get()
                 .build();
         try(Response response = client.newCall(request).execute()){
             Weather weather = gson.fromJson(response.body().string(), Weather.class);
-//            log.info(weather.toString());
             List<Weather.HourlyDTO> hourly = weather.getHourly();
 
-            List<Double> list = new ArrayList<>();
-            list.add(weather.getCurrent().getUvi());
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
+
             for(Weather.HourlyDTO hourlyDTO: hourly){
-                list.add(hourlyDTO.getUvi());
+                map.put(hourlyDTO.getDt().toString(), hourlyDTO.getUvi().toString());
             }
 
-            return gson.toJson(list);
+            return gson.toJson(map);
         }catch (Exception e){
             log.error(e.getMessage());
         }
 
+        return null;
+    }
+
+    @Override
+    public Double getCurrentUVI(String lat, String lon) {
+        String url = "https://api.openweathermap.org/data/3.0/onecall" +
+                "?lat=" + lat +
+                "&lon=" + lon +
+                "&exclude=minutely,daily" +
+                "&appid=" + API_KEY;
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        try(Response response = client.newCall(request).execute()){
+            Weather weather = gson.fromJson(response.body().string(), Weather.class);
+            return weather.getCurrent().getUvi();
+        } catch (Exception e){
+            log.error(e.getMessage());
+        }
         return null;
     }
 
@@ -62,7 +83,7 @@ public class UVLevelServiceImpl implements UVLevelService {
         String url = "https://api.openweathermap.org/geo/1.0/direct"
                 + "?q=" + cityName
                 + ",au"
-                + "&appid=" + Constant.API_KEY;
+                + "&appid=" + API_KEY;
         Request request = new Request.Builder()
                 .url(url)
                 .get()
