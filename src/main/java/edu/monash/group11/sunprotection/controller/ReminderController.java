@@ -32,7 +32,6 @@ public class ReminderController {
 
 
 
-
         return ResponseDO.success(null);
     }
 }

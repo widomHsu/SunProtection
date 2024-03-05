@@ -14,7 +14,7 @@ public class UVTrackController {
     @Resource
     private UVLevelService uvLevelService;
 
-    @GetMapping("/UVLevel/{city}")
+    @GetMapping("/UVLevelByCity/{city}")
     public ResponseDO getUVLevel(@PathVariable("city")String cityName){
         String[] location = uvLevelService.getLocation(cityName); //lat lon
 
@@ -23,5 +23,13 @@ public class UVTrackController {
         log.info(location[0] + " " + location[1]);
 
         return ResponseDO.success(uvLevelService.getUVLevel(location[0], location[1]));
+    }
+
+    @GetMapping("/UVLevel/{lat}&{lon}")
+    public ResponseDO getUVLevelByLatAndLon(@PathVariable("lat")String lat, @PathVariable("lon") String lon){
+        String uvLevel = uvLevelService.getUVLevel(lat, lon);
+        if(uvLevel == null)
+            return ResponseDO.fail("Invalid geolocation");
+        return ResponseDO.success(uvLevel);
     }
 }
