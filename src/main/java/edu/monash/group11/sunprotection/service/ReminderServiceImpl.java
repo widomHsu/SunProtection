@@ -6,7 +6,6 @@ import edu.monash.group11.sunprotection.intf.mapper.ReminderMapper;
 import edu.monash.group11.sunprotection.service.entity.Reminder;
 import edu.monash.group11.sunprotection.service.entity.ResponseDO;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.message.SimpleMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -62,8 +61,12 @@ public class ReminderServiceImpl implements ReminderService {
         int hours = 0;
         if(currentUVI > 3 && currentUVI < 6.0)
             hours = 3;
-        else
+        else if(currentUVI >= 6.0)
             hours = 6;
-        reminder.setNotifyTime(reminder.getStartTime() + hours * 60 * 60);
+
+        if(hours != 0)
+            reminder.setNotifyTime(reminder.getStartTime() + hours * 60 * 60);
+        else
+            reminder.setNotifyTime((reminder.getEndTime()));
     }
 }
