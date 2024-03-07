@@ -58,7 +58,7 @@ public class UVLevelServiceImpl implements UVLevelService {
     }
 
     @Override
-    public Double getCurrentUVI(String lat, String lon) {
+    public Double getUVIByTime(String lat, String lon, long time) {
         String url = "https://api.openweathermap.org/data/3.0/onecall" +
                 "?lat=" + lat +
                 "&lon=" + lon +
@@ -70,7 +70,16 @@ public class UVLevelServiceImpl implements UVLevelService {
                 .build();
         try(Response response = client.newCall(request).execute()){
             Weather weather = gson.fromJson(response.body().string(), Weather.class);
-            return weather.getCurrent().getUvi();
+            List<Weather.HourlyDTO> hourly = weather.getHourly();
+            int size = hourly.size();
+            if(time >= hourly.get(size-1).getDt() + 60 * 60){
+                return (double) -1;
+            }
+            for(int i = 0; i < size-1; i++){
+                if(time >= hourly.get(i).getDt() && time <= hourly.get(i+1).getDt())
+                    return hourly.get(i).getUvi();
+            }
+            return hourly.get(size-1).getUvi();
         } catch (Exception e){
             log.error(e.getMessage());
         }

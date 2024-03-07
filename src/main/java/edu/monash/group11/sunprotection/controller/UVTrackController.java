@@ -2,6 +2,7 @@ package edu.monash.group11.sunprotection.controller;
 
 import edu.monash.group11.sunprotection.intf.UVLevelService;
 import edu.monash.group11.sunprotection.service.entity.ResponseDO;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
@@ -9,6 +10,7 @@ import javax.annotation.Resource;
 @RestController
 @RequestMapping("/UVI")
 @Slf4j
+@Tag(name = "UVI")
 public class UVTrackController {
 
     @Resource

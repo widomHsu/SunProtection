@@ -1,12 +1,16 @@
 package edu.monash.group11.sunprotection.service.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
 public class ResponseDO {
 
+    @Schema(description = "Whether an error occurred in the request")
     private boolean success;
+    @Schema(description = "Response message")
     private String msg;
+    @Schema(description = "Response data")
     private Object data;
 
     public ResponseDO() {
