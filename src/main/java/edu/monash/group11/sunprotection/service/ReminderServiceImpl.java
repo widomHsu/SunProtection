@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Implementation class for ReminderService responsible for creating reminders, retrieving reminder history,
+ * and sending reminder messages.
+ */
 @Service
 @Slf4j
 public class ReminderServiceImpl implements ReminderService {
@@ -37,6 +41,11 @@ public class ReminderServiceImpl implements ReminderService {
     private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm");
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    /**
+     * Creates a new reminder.
+     * @param reminder The reminder to be created.
+     * @return ResponseDO indicating success or failure of the reminder creation.
+     */
     @Override
     public ResponseDO createReminder(Reminder reminder) {
         reminder.setStartTime(reminder.getStartTime());
@@ -46,6 +55,13 @@ public class ReminderServiceImpl implements ReminderService {
         return ResponseDO.success(null);
     }
 
+    /**
+     * Retrieves the history of reminders for a given email address.
+     * Optionally sends an email with the reminder history.
+     * @param email The email address associated with the reminders.
+     * @param send Flag indicating whether to send an email with the reminder history (0: No, 1: Yes).
+     * @return ResponseDO containing reminder history or indicating failure.
+     */
     @Override
     public ResponseDO getHistoryOfReminders(String email, int send) {
         List<Reminder> reminders = reminderMapper.getRemindersByEmail(email);
@@ -57,6 +73,9 @@ public class ReminderServiceImpl implements ReminderService {
         return ResponseDO.success(gson.toJson(reminders));
     }
 
+    /**
+     * Sends reminder messages based on scheduled tasks.
+     */
     @Override
     @Scheduled(fixedDelay = 5000)
     public void sendReminderMessage() {
@@ -74,6 +93,11 @@ public class ReminderServiceImpl implements ReminderService {
         }
     }
 
+    /**
+     * Checks the UV index for a given reminder and updates the reminder accordingly.
+     * @param reminder The reminder to check.
+     * @param time The time to check for UV index.
+     */
     public void checkReminder(Reminder reminder, long time){
         Double UVI = uvLevelService.getUVIByTime(reminder.getLat(), reminder.getLon(), time);
         log.info(sdf.format(new Date(time * 1000)) + " " + UVI);
@@ -82,26 +106,22 @@ public class ReminderServiceImpl implements ReminderService {
             reminder.setStatus(ReminderStatusEnum.Upcoming.getId());
             return;
         }
-
-        int hours = 0;
-        if(UVI < 3.0)
-            hours = 10;
-        else if(UVI < 6.0)
-            hours = 5;
-        else if(UVI < 8.0)
-            hours = 4;
-        else if(UVI >= 9.0)
-            hours = 3;
+        int seconds = UVI >= 3.0 ? 2 : 0;
+        seconds *= 60*60;
 
         reminder.setNextNotifyTime(reminder.getNextNotifyTime() == null ?
-                reminder.getStartTime() + hours * 60 * 60 : reminder.getNextNotifyTime() + hours * 60 * 60);
+                reminder.getStartTime() + seconds : reminder.getNextNotifyTime() + seconds);
         if(reminder.getNextNotifyTime() >= reminder.getEndTime())
             reminder.setStatus(ReminderStatusEnum.Inactive.getId());
         else
             reminder.setStatus(ReminderStatusEnum.Active.getId());
-
     }
 
+    /**
+     * Sends an email with the history of reminders.
+     * @param reminders The list of reminders.
+     * @param email The recipient's email address.
+     */
     public void sendHistoryOfReminders(List<Reminder> reminders, String email){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);

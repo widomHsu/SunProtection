@@ -16,7 +16,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+/**
+ * Implementation of the UVLevelService interface providing methods for retrieving UV levels and location information.
+ */
 @Slf4j
 @Service
 public class UVLevelServiceImpl implements UVLevelService {
@@ -27,6 +29,13 @@ public class UVLevelServiceImpl implements UVLevelService {
     private Gson gson;
     @Value("${API.key}")
     private String API_KEY;
+
+    /**
+     * Retrieves UV levels for a given latitude and longitude.
+     * @param lat The latitude of the location.
+     * @param lon The longitude of the location.
+     * @return JSON string representing the UV levels.
+     */
     @Override
     public String getUVLevel(String lat, String lon) {
         // https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=minutely,daily&appid=b3c322f72dca971cf25f9a3af1502e75
@@ -57,6 +66,13 @@ public class UVLevelServiceImpl implements UVLevelService {
         return null;
     }
 
+    /**
+     * Retrieves the UV index for a given latitude, longitude, and time.
+     * @param lat The latitude of the location.
+     * @param lon The longitude of the location.
+     * @param time The time for which UV index is to be retrieved (in seconds).
+     * @return The UV index at the specified time.
+     */
     @Override
     public Double getUVIByTime(String lat, String lon, long time) {
         String url = "https://api.openweathermap.org/data/3.0/onecall" +
@@ -86,6 +102,11 @@ public class UVLevelServiceImpl implements UVLevelService {
         return null;
     }
 
+    /**
+     * Retrieves latitude and longitude for a given city name.
+     * @param cityName The name of the city.
+     * @return An array containing latitude and longitude.
+     */
     @Override
     public String[] getLocation(String cityName) {
         // https://api.openweathermap.org/geo/1.0/direct?q=Melbourne,au&limit=5&appid=b3c322f72dca971cf25f9a3af1502e75

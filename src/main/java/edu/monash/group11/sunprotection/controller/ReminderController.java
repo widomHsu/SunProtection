@@ -12,7 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
-
+/**
+ * Controller class responsible for handling reminder-related requests.
+ * Provides endpoints for creating reminders and retrieving reminder history.
+ */
 @RestController
 @RequestMapping("/reminder")
 @Slf4j
@@ -24,6 +27,11 @@ public class ReminderController {
     @Resource
     RegexUtils regexUtils;
 
+    /**
+     * Endpoint for creating a reminder.
+     * @param reminder The reminder object to be created.
+     * @return ResponseDO indicating success or failure of the reminder creation.
+     */
     @PostMapping("/create")
     public ResponseDO create(@RequestBody Reminder reminder){
         if(!regexUtils.checkEmail(reminder.getEmail()))
@@ -31,6 +39,12 @@ public class ReminderController {
         return reminderService.createReminder(reminder);
     }
 
+    /**
+     * Endpoint for retrieving reminder history.
+     * @param email The email address associated with the reminders to retrieve.
+     * @param send Flag indicating whether to send an email to the user (0: No, 1: Yes).
+     * @return ResponseDO containing reminder history or indicating failure.
+     */
     @GetMapping("/get/{email}&{send}")
     @Parameter(name = "send", description = "Whether to send an email to the user? 0: No 1: Yes.")
     @ApiResponse(responseCode = "200", description = "The response data is an array of Reminder Object")
