@@ -37,8 +37,7 @@ public class UVLevelServiceImpl implements UVLevelService {
      * @return JSON string representing the UV levels.
      */
     @Override
-    public String getUVLevel(String lat, String lon) {
-        // https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=minutely,daily&appid=b3c322f72dca971cf25f9a3af1502e75
+    public String getUVIHourly(String lat, String lon) {
         String url = "https://api.openweathermap.org/data/3.0/onecall" +
                 "?lat=" + lat +
                 "&lon=" + lon +
@@ -70,11 +69,10 @@ public class UVLevelServiceImpl implements UVLevelService {
      * Retrieves the UV index for a given latitude, longitude, and time.
      * @param lat The latitude of the location.
      * @param lon The longitude of the location.
-     * @param time The time for which UV index is to be retrieved (in seconds).
      * @return The UV index at the specified time.
      */
     @Override
-    public Double getUVIByTime(String lat, String lon, long time) {
+    public Double getCurrentUVI(String lat, String lon) {
         String url = "https://api.openweathermap.org/data/3.0/onecall" +
                 "?lat=" + lat +
                 "&lon=" + lon +
@@ -85,17 +83,12 @@ public class UVLevelServiceImpl implements UVLevelService {
                 .get()
                 .build();
         try(Response response = client.newCall(request).execute()){
+            if(!response.isSuccessful()){
+                log.warn("Invalid geo-location!");
+                return null;
+            }
             Weather weather = gson.fromJson(response.body().string(), Weather.class);
-            List<Weather.HourlyDTO> hourly = weather.getHourly();
-            int size = hourly.size();
-            if(time >= hourly.get(size-1).getDt() + 60 * 60){
-                return (double) -1;
-            }
-            for(int i = 0; i < size-1; i++){
-                if(time >= hourly.get(i).getDt() && time <= hourly.get(i+1).getDt())
-                    return hourly.get(i).getUvi();
-            }
-            return hourly.get(size-1).getUvi();
+            return weather.getCurrent().getUvi();
         } catch (Exception e){
             log.error(e.getMessage());
         }

@@ -16,6 +16,11 @@ public class ResponseDO {
     public ResponseDO() {
     }
 
+    public ResponseDO(boolean success, String msg) {
+        this.success = success;
+        this.msg = msg;
+    }
+
     public ResponseDO(boolean success, String msg, Object data) {
         this.success = success;
         this.msg = msg;

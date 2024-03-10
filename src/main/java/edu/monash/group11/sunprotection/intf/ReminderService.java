@@ -7,5 +7,5 @@ public interface ReminderService {
     ResponseDO createReminder(Reminder reminder);
     ResponseDO getHistoryOfReminders(String email, int send);
 
-    void sendReminderMessage();
+    void sendEmail();
 }

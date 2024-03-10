@@ -4,8 +4,11 @@ import edu.monash.group11.sunprotection.intf.UVLevelService;
 import edu.monash.group11.sunprotection.service.entity.ResponseDO;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.FileInputStream;
 
 /**
  * Controller class responsible for handling requests related to UV (Ultraviolet) index tracking.
@@ -27,13 +30,13 @@ public class UVTrackController {
      */
     @GetMapping("/UVIByCity/{city}")
     public ResponseDO getUVLevels(@PathVariable("city")String cityName){
-        String[] location = uvLevelService.getLocation(cityName); //lat lon
+        String[] geo = uvLevelService.getLocation(cityName); //lat lon
 
-        if(location == null || location.length == 0)
+        if(geo == null || geo.length == 0)
             return ResponseDO.fail("Invalid Australian city name!");
-        log.info(location[0] + " " + location[1]);
+        log.info(geo[0] + " " + geo[1]);
 
-        return ResponseDO.success(uvLevelService.getUVLevel(location[0], location[1]));
+        return ResponseDO.success(uvLevelService.getUVIHourly(geo[0], geo[1]));
     }
 
     /**
@@ -44,9 +47,18 @@ public class UVTrackController {
      */
     @GetMapping("/UVIByGeo/{lat}&{lon}")
     public ResponseDO getUVLevelByLatAndLon(@PathVariable("lat")String lat, @PathVariable("lon") String lon){
-        String uvLevel = uvLevelService.getUVLevel(lat, lon);
-        if(uvLevel == null)
+        String UVIs = uvLevelService.getUVIHourly(lat, lon);
+        if(UVIs == null)
             return ResponseDO.fail("Invalid geolocation");
-        return ResponseDO.success(uvLevel);
+        return ResponseDO.success(UVIs);
+    }
+
+    @GetMapping(value = "/impacts",produces = MediaType.IMAGE_JPEG_VALUE)
+    public byte[] getImpacts() throws Exception {
+        File file = new File("src/main/resources/static/img.png");
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] bytes = new byte[inputStream.available()];
+        inputStream.read(bytes, 0, inputStream.available());
+        return bytes;
     }
 }

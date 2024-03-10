@@ -18,8 +18,6 @@ import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Implementation class for ReminderService responsible for creating reminders, retrieving reminder history,
@@ -39,7 +37,7 @@ public class ReminderServiceImpl implements ReminderService {
     @Value("${spring.mail.username}")
     private String from;
     private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+//    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /**
      * Creates a new reminder.
@@ -48,11 +46,11 @@ public class ReminderServiceImpl implements ReminderService {
      */
     @Override
     public ResponseDO createReminder(Reminder reminder) {
-        reminder.setStartTime(reminder.getStartTime());
-        reminder.setEndTime(reminder.getEndTime());
-        checkReminder(reminder, reminder.getStartTime());
-        reminderMapper.insertReminder(reminder);
-        return ResponseDO.success(null);
+        reminder.setEndTime(reminder.getStartTime() + 12 * 60 * 60);
+        ResponseDO responseDO = checkReminder(reminder);
+        if(responseDO.isSuccess())
+            reminderMapper.insertReminder(reminder);
+        return responseDO;
     }
 
     /**
@@ -67,9 +65,9 @@ public class ReminderServiceImpl implements ReminderService {
         List<Reminder> reminders = reminderMapper.getRemindersByEmail(email);
         if(reminders == null || reminders.isEmpty())
             return ResponseDO.fail("You didn't create any reminders!");
-        if(send == 1){
-            executor.submit(() -> sendHistoryOfReminders(reminders, email));
-        }
+//        if(send == 1){
+//            executor.submit(() -> sendHistoryOfReminders(reminders, email));
+//        }
         return ResponseDO.success(gson.toJson(reminders));
     }
 
@@ -78,7 +76,7 @@ public class ReminderServiceImpl implements ReminderService {
      */
     @Override
     @Scheduled(fixedDelay = 5000)
-    public void sendReminderMessage() {
+    public void sendEmail() {
         List<Reminder> reminders = reminderMapper.getRemindersToSend();
         for(Reminder reminder: reminders){
             SimpleMailMessage message = new SimpleMailMessage();
@@ -88,7 +86,8 @@ public class ReminderServiceImpl implements ReminderService {
             message.setText("Don't forget to reapply sunscreen!");
             mailSender.send(message);
             log.info("Send an email to " + reminder.getEmail());
-            checkReminder(reminder, reminder.getNextNotifyTime());
+
+            reminder.setStatus(ReminderStatusEnum.Inactive.getId()); // only send email once
             reminderMapper.updateReminder(reminder);
         }
     }
@@ -96,25 +95,26 @@ public class ReminderServiceImpl implements ReminderService {
     /**
      * Checks the UV index for a given reminder and updates the reminder accordingly.
      * @param reminder The reminder to check.
-     * @param time The time to check for UV index.
      */
-    public void checkReminder(Reminder reminder, long time){
-        Double UVI = uvLevelService.getUVIByTime(reminder.getLat(), reminder.getLon(), time);
-        log.info(sdf.format(new Date(time * 1000)) + " " + UVI);
-        if(UVI == -1){
-            // check upcoming reminder - it will not be achieved in onBoarding
-            reminder.setStatus(ReminderStatusEnum.Upcoming.getId());
-            return;
+    public ResponseDO checkReminder(Reminder reminder){
+        Double UVI = uvLevelService.getCurrentUVI(reminder.getLat(), reminder.getLon());
+        log.info("Current UVI in " + reminder.getLat() + ", " + reminder.getLon() + " is " + UVI);
+        if(UVI == null)
+            return ResponseDO.fail("Invalid geo-location");
+        if(UVI > 3.0){
+            reminder.setNextNotifyTime(reminder.getStartTime() + 2 * 60 * 60);// send an email in 2 hours
+            if(reminder.getNextNotifyTime() >= reminder.getEndTime()){
+                reminder.setStatus(ReminderStatusEnum.Inactive.getId());
+                return new ResponseDO();
+            }
+            else{
+                reminder.setStatus(ReminderStatusEnum.Active.getId());
+                String notifyTime = sdf.format(new Date(reminder.getNextNotifyTime() * 1000));
+                return new ResponseDO(true, "We will remind you at " + notifyTime);
+            }
         }
-        int seconds = UVI >= 3.0 ? 2 : 0;
-        seconds *= 60*60;
-
-        reminder.setNextNotifyTime(reminder.getNextNotifyTime() == null ?
-                reminder.getStartTime() + seconds : reminder.getNextNotifyTime() + seconds);
-        if(reminder.getNextNotifyTime() >= reminder.getEndTime())
-            reminder.setStatus(ReminderStatusEnum.Inactive.getId());
-        else
-            reminder.setStatus(ReminderStatusEnum.Active.getId());
+        reminder.setStatus(ReminderStatusEnum.Inactive.getId());
+        return ResponseDO.fail("The current UVI is " + UVI  + ", lower than 3.0, so you don't need to reapply");
     }
 
     /**
