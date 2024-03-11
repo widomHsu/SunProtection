@@ -1,4 +1,4 @@
-1. http://3.25.145.62:8080/api.html
+1. https://fourtitude.me/api.html
 
 2. getUVI
 Get /UVI/UVIByCity/{city}

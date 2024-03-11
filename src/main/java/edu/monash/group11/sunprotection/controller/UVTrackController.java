@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.FileInputStream;
 
 /**
  * Controller class responsible for handling requests related to UV (Ultraviolet) index tracking.
@@ -53,12 +51,8 @@ public class UVTrackController {
         return ResponseDO.success(UVIs);
     }
 
-    @GetMapping(value = "/impacts",produces = MediaType.IMAGE_JPEG_VALUE)
-    public byte[] getImpacts() throws Exception {
-        File file = new File("src/main/resources/static/img.png");
-        FileInputStream inputStream = new FileInputStream(file);
-        byte[] bytes = new byte[inputStream.available()];
-        inputStream.read(bytes, 0, inputStream.available());
-        return bytes;
+    @GetMapping(value = "/impacts", produces = MediaType.IMAGE_JPEG_VALUE)
+    public byte[] getImpacts(){
+        return uvLevelService.getImpacts();
     }
 }

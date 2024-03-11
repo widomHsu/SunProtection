@@ -9,9 +9,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +33,8 @@ public class UVLevelServiceImpl implements UVLevelService {
     private Gson gson;
     @Value("${API.key}")
     private String API_KEY;
+    @Resource
+    private ResourceLoader resourceLoader;
 
     /**
      * Retrieves UV levels for a given latitude and longitude.
@@ -125,5 +131,27 @@ public class UVLevelServiceImpl implements UVLevelService {
             log.error(e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public byte[] getImpacts() {
+        InputStream inputStream = null;
+        ByteArrayOutputStream outputStream = null;
+
+        try {
+            inputStream = resourceLoader.getResource("classpath:/static/img.png").getInputStream();
+            outputStream = new ByteArrayOutputStream();
+
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -7,4 +7,6 @@ public interface UVLevelService {
     Double getCurrentUVI(String lat, String lon);
 
     String[] getLocation(String cityName);
+
+    byte[] getImpacts();
 }
